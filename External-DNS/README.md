@@ -52,8 +52,8 @@ External DNS pods authenticate to Azure DNS using one of the three methods.
     {   
         "appId": "49c7739f-eea7-41b7-be36-1635de8bbf6c",
         "displayName": "spn-external-dns-aks",
-        "password": "Un98Q~eJ4DJOBBvBwivaJmWCc9uFoHScRLxAgc1n",
-        "tenant": "18791e17-6159-4f52-a8d4-de814ca8284a"
+        "password": "********************",
+        "tenant": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     }
     $EXTERNALDNS_SPN_APP_ID= "<appId of spn |refer output of above command>"
     $EXTERNALDNS_SPN_PASSWORD="<password of spn | refer output of above command>"
@@ -90,14 +90,6 @@ Create a Kubernetes secret for the service principal
 }
 "@ > azure.json
 
-cat azure.json
-# {
-#   "tenantId": "16b3c013-d300-468d-ac64-7eda0820b6d3",
-#   "subscriptionId": "82f6d75e-85f4-434a-ab74-5dddd9fa8910",
-#   "resourceGroup": "rg-dns-zone-houssem-cloud",
-#   "aadClientId": "9cc6c0d1-99a3-4d86-9df4-a84df55b8232",
-#   "aadClientSecret": "LJS8Q~ZeuAPJfE7Hjzy6bYZ8NQ4O5YrlJfATxbL6"
-# }
 
 Deploy the credentials as a Kubernetes secret.
 
