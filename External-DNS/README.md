@@ -53,7 +53,7 @@ External DNS pods authenticate to Azure DNS using one of the three methods.
         "appId": "49c7739f-eea7-41b7-be36-1635de8bbf6c",
         "displayName": "spn-external-dns-aks",
         "password": "Un98Q~eJ4DJOBBvBwivaJmWCc9uFoHScRLxAgc1n",
-        "tenant": "18791e17-6159-4f52-a8d4-de814ca8284a"
+        "tenant": "18791e17-6159-4f52-a"
     }
     $EXTERNALDNS_SPN_APP_ID= "<appId of spn |refer output of above command>"
     $EXTERNALDNS_SPN_PASSWORD="<password of spn | refer output of above command>"
