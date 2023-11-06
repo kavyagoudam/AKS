@@ -50,7 +50,7 @@ External DNS pods authenticate to Azure DNS using one of the three methods.
     # Create the service principal
     az ad sp create-for-rbac --name $EXTERNALDNS_SPN_NAME
     {   
-        "appId": "49c7739f-eea7-41b7-be36-1635de8bbf6c",
+        "appId": "XXXXXXXXXXXXXXXXXXXXXXXXXXX",
         "displayName": "spn-external-dns-aks",
         "password": "********************",
         "tenant": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
