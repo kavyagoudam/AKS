@@ -1,4 +1,4 @@
-private AKS CLuster Access
+## private AKS CLuster Access
 
 1. Control plane is exposed to on public FQDN but with private ip address
 2. Control plane endpoint is not exposed to the internet
