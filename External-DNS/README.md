@@ -134,7 +134,7 @@ Before deploying the yaml, change the namespace name in ClusterRoleBinding in ex
 ``` bash
 kubectl create ns external-dns
 
-kubectl apply -f external-dns.yaml -n external-dns
+kubectl apply -f external_dns.yaml -n external-dns
 ```
 verify the deployment
 ``` bash
@@ -153,7 +153,7 @@ In portal go to DNS zone to check Updated A record in corresponding zones
 
 Create a sample app exposed through ingress
 ``` bash
-kubectl apply -f app-ingress.yaml
+kubectl apply -f app_ingress.yaml
 
 kubectl get pods,svc,ingress
 ```
