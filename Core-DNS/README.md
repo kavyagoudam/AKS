@@ -26,7 +26,8 @@ service/kube-dns   ClusterIP   10.0.0.10    <none>        53/UDP,53/TCP   136m
 NAME                       DATA   AGE
 configmap/coredns          1      136m
 configmap/coredns-custom   1      136m
-ConfigMaps
+
+## ConfigMaps
 CoreDNS uses ConfigMaps to get configuration details. There are two ConfigMaps that CoreDNS uses:
 
 coredns: Basic configuration.
