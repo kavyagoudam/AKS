@@ -9,6 +9,7 @@ Service discovery with CoreDNS.
     core-dns is already installed in k8s by default.
 
 kubectl get pods,svc,configmaps -n kube-system -l=k8s-app=kube-dns 
+
 NAME                           READY   STATUS    RESTARTS   AGE
 pod/coredns-76b9877f49-5xw45   1/1     Running   0          13m
 pod/coredns-76b9877f49-zf6d9   1/1     Running   0          13m
@@ -20,7 +21,8 @@ NAME                       DATA   AGE
 configmap/coredns          1      136m
 configmap/coredns-custom   1      136m
 
-Core-DNS
+ConfigMaps
+
 Core -DNS uses configmap to get configuration details. there are two configmaps coredns uses.
 1. coredns -- basic configmaps
 2. coredns-Custom -- available to user to be able to customize this DNS configuration
@@ -31,13 +33,17 @@ How to configure Cusom domain name using core-dns and test it
 1. create a basic deployment and service using nginx image
 
 kubectl create deployment nginx --image=nginx --replicas=3
+
 deployment.apps/nginx created
+
 kubectl expose deployment nginx --name nginx --port=80
+
 service/nginx exposed
 
 2. Now, create and deploy the custom domain name resolvable inside the kubernetes
 
 kubectl apply -f custom_coredns.yaml 
+
 Warning: resource configmaps/coredns-custom is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
 configmap/coredns-custom configured
 
