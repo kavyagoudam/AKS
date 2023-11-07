@@ -1,5 +1,4 @@
-markdown
-Copy code
+
 # Custom Domain Names using Kubernetes CoreDNS
 
 ## Introduction
