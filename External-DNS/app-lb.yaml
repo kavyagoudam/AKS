@@ -32,12 +32,4 @@ spec:
     app: app01
   type: LoadBalancer
 
-Check the logs in  external DNS pod
 
-kubectl logs <external-dns-pod name> -n external-dns
-
-In portal go to DNS zone to check Updated A record in corresponding zones
-
-Create a sample app exposed through ingress
-
-kubectl apply -f app-ingress.yaml
