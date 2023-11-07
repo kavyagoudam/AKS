@@ -1,15 +1,21 @@
-Custom Domain names using kubernetes CoreDNS
+markdown
+Copy code
+# Custom Domain Names using Kubernetes CoreDNS
 
-Introduction:-
-    The main objective to setup custom Domain in Kubernetes clusters. means to replace default.svc.kubernetes.local to custome domain like mydomain.com
-    Core DNS is a opensource tool available on GitHub. which is written in go. Many plugins are available for multiple clouds.
+## Introduction
 
-Service discovery with CoreDNS.
-    core DNS integrates with kubernetes via kubernetes plugin or etcd with etcd plugin.
-    core-dns is already installed in k8s by default.
+The main objective is to set up a custom domain in Kubernetes clusters, replacing the default.svc.kubernetes.local with a custom domain like mydomain.com. CoreDNS is an open-source tool available on GitHub, written in Go, with many plugins available for various cloud platforms.
 
-kubectl get pods,svc,configmaps -n kube-system -l=k8s-app=kube-dns 
+## Service Discovery with CoreDNS
 
+CoreDNS integrates with Kubernetes via the Kubernetes plugin or with etcd using the etcd plugin. CoreDNS is already installed in Kubernetes by default. You can verify its status using the following command:
+
+```bash
+kubectl get pods,svc,configmaps -n kube-system -l=k8s-app=kube-dns
+The output will display CoreDNS pods and services:
+
+bash
+Copy code
 NAME                           READY   STATUS    RESTARTS   AGE
 pod/coredns-76b9877f49-5xw45   1/1     Running   0          13m
 pod/coredns-76b9877f49-zf6d9   1/1     Running   0          13m
@@ -20,38 +26,29 @@ service/kube-dns   ClusterIP   10.0.0.10    <none>        53/UDP,53/TCP   136m
 NAME                       DATA   AGE
 configmap/coredns          1      136m
 configmap/coredns-custom   1      136m
-
 ConfigMaps
+CoreDNS uses ConfigMaps to get configuration details. There are two ConfigMaps that CoreDNS uses:
 
-Core -DNS uses configmap to get configuration details. there are two configmaps coredns uses.
-1. coredns -- basic configmaps
-2. coredns-Custom -- available to user to be able to customize this DNS configuration
-
-
-How to configure Cusom domain name using core-dns and test it
-
-1. create a basic deployment and service using nginx image
-
+coredns: Basic configuration.
+coredns-custom: Custom DNS configuration available for users to customize.
+How to Configure Custom Domain Name using CoreDNS and Test it
+Create a basic deployment and service using the Nginx image:
+bash
+Copy code
 kubectl create deployment nginx --image=nginx --replicas=3
-
-deployment.apps/nginx created
-
 kubectl expose deployment nginx --name nginx --port=80
+Now, create and deploy the custom domain name for resolution inside Kubernetes:
+bash
+Copy code
+kubectl apply -f custom_coredns.yaml
+Note: You might encounter a warning about missing annotations, but it can be ignored in this context.
 
-service/nginx exposed
-
-2. Now, create and deploy the custom domain name resolvable inside the kubernetes
-
-kubectl apply -f custom_coredns.yaml 
-
-Warning: resource configmaps/coredns-custom is missing the kubectl.kubernetes.io/last-applied-configuration annotation which is required by kubectl apply. kubectl apply should only be used on resources created declaratively by either kubectl create --save-config or kubectl apply. The missing annotation will be patched automatically.
-configmap/coredns-custom configured
-
-3. Once the configmap is deployed. delete the coredns pods using below command.
-
-kubectl delete pod -n  kube-system -l k8s-app=kube-dns
-
-4. once the new pods are created in coredns. curl to the nginx pod with custom domain name
-
-kubectl exec -it <nginx pod name>  -- curl http://nginx.default.aks.com
-
+Once the coredns-custom ConfigMap is deployed, delete the CoreDNS pods using the following command:
+bash
+Copy code
+kubectl delete pod -n kube-system -l k8s-app=kube-dns
+After the new CoreDNS pods are created, you can test the custom domain by using curl to access the Nginx service with the custom domain name:
+bash
+Copy code
+kubectl exec -it <nginx-pod-name> -- curl http://nginx.default.aks.com
+Replace <nginx-pod-name> with the actual name of one of your Nginx pods.
