@@ -23,29 +23,35 @@ service/kube-dns   ClusterIP   10.0.0.10    <none>        53/UDP,53/TCP   136m
 NAME                       DATA   AGE
 configmap/coredns          1      136m
 configmap/coredns-custom   1      136m
-
+```
 ## ConfigMaps
 CoreDNS uses ConfigMaps to get configuration details. There are two ConfigMaps that CoreDNS uses:
 
 coredns: Basic configuration.
 coredns-custom: Custom DNS configuration available for users to customize.
-How to Configure Custom Domain Name using CoreDNS and Test it
+## How to Configure Custom Domain Name using CoreDNS and Test it
+
 Create a basic deployment and service using the Nginx image:
 
-
+```bash
 kubectl create deployment nginx --image=nginx --replicas=3
 kubectl expose deployment nginx --name nginx --port=80
+```
+
 Now, create and deploy the custom domain name for resolution inside Kubernetes:
 
-
+``` bash
 kubectl apply -f custom_coredns.yaml
 Note: You might encounter a warning about missing annotations, but it can be ignored in this context.
-
+```
 Once the coredns-custom ConfigMap is deployed, delete the CoreDNS pods using the following command:
 
-
+```bash
 kubectl delete pod -n kube-system -l k8s-app=kube-dns
+```
 After the new CoreDNS pods are created, you can test the custom domain by using curl to access the Nginx service with the custom domain name:
+'''bash
 
 kubectl exec -it <nginx-pod-name> -- curl http://nginx.default.aks.com
+```
 Replace <nginx-pod-name> with the actual name of one of your Nginx pods.
