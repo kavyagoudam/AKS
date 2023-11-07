@@ -1,4 +1,4 @@
-Private AKS cluster with vnet integration
+#Private AKS cluster with vnet integration
 
 Control plane is exposed only on private ip and internal load balancer.
 contrrol plane has public FQDN exposed to the internet. Public FQDN references a private IP could be disabled
