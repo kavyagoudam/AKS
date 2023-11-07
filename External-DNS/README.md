@@ -13,6 +13,13 @@ External DNS pods authenticate to Azure DNS using one of the three methods.
 2. kubelet Managed Identity
 3. User Assigned MAnaged Identity
 
+Flow Diagram:- 
+1. Whenever a service or ingress resources are created, An public ip will be created. by default. 
+2. For each public ip we need to create a A record, in DNS Zone
+3. Using a External DNS, We can automate the process of updated A record in DNS Zone
+4. Service principle will be created with DNS Zone Contributor access to DNS Zone
+5. Cluster Role is created with appropriate permission to service and ingress resource.
+
 
 AKS Setup Using Azure CLI
 
