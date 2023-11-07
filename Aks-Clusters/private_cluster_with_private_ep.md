@@ -1,4 +1,4 @@
-## private AKS CLuster Access
+## private AKS Cluster Access
 
 ## Introduction
 
