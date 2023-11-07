@@ -27,7 +27,7 @@ refer the image FlowDiagram.drawio.png
 
 ##  AKS Setup Using Azure CLI
 
-    Create a AKS cluster with public access enabled
+1. Create a AKS cluster with public access enabled
 ``` bash
 $AKS_RG="rg-ext-dns"
 $AKS_NAME="ext-dns-demo"
@@ -36,8 +36,7 @@ az aks create -g $AKS_RG -n $AKS_NAME --kubernetes-version "1.26.6" --node-count
 az aks get-credentials -n $AKS_NAME -g $AKS_RG --overwrite-existing
 ```
 
-Install the Ingress Controller using helm charts
-
+2. Install the Ingress Controller using helm charts
 ``` bash
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
@@ -47,7 +46,7 @@ helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx `
      --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
 ```
 
-Create Azure DNS Zone
+3. Create Azure DNS Zone
 ``` bash
 $DNS_ZONE_NAME="<replace with your domain name>"
 $DNS_ZONE_RG="azure-dns-for-ext-dns"
@@ -55,10 +54,10 @@ az group create -n $DNS_ZONE_RG -l east-us
 az network dns zone create -g $DNS_ZONE_RG -n $DNS_ZONE_NAME
 ```
 
-Authentication between External Pods and Azure DNS
+4. Authentication between External Pods and Azure DNS
 
 External DNS pods authenticate to Azure DNS using one of the three methods.
-1. Service principle
+    1. Service principle
 ``` bash
 $EXTERNALDNS_SPN_NAME="spn-external-dns-aks"
 az ad sp create-for-rbac --name $EXTERNALDNS_SPN_NAME
@@ -72,10 +71,10 @@ $EXTERNALDNS_SPN_APP_ID= "<appId of spn |refer output of above command>"
 $EXTERNALDNS_SPN_PASSWORD="<password of spn | refer output of above command>"
 ```
 
-3. kubelet Managed Identity
-4. User Assigned MAnaged Identity
+    3. kubelet Managed Identity
+    4. User Assigned MAnaged Identity
 
-Assign the RBAC for the service principal :
+5. Assign the RBAC for the service principal :
 
 Grant access to Azure DNS zone for the service principal.
 
@@ -96,13 +95,13 @@ assign contributor to DNS Zone itself
 az role assignment create --role "DNS Zone Contributor" --assignee $EXTERNALDNS_SPN_APP_ID --scope $DNS_ZONE_ID
 ```
 
-verify the role Assignment
+6. verify the role Assignment
 
 ``` bash
 az role assignment list --all --assignee $EXTERNALDNS_SPN_APP_ID -o table
 ```
 
-Create a Kubernetes secret for the service principal
+7. Create a Kubernetes secret for the service principal
 ``` bash
 @"
 {
@@ -115,22 +114,20 @@ Create a Kubernetes secret for the service principal
 "@ > azure.json
 ```
 
-Deploy the credentials as a Kubernetes secret.
+8. Deploy the credentials as a Kubernetes secret.
 
 ``` bash
 kubectl create namespace external-dns
-
-
 kubectl create secret generic azure-config-file -n external-dns --from-file azure.json
 ```
-6. Deploy External DNS
+9. Deploy External DNS
 
 External DNS can be deployed using menifest file or helm charts. in this example, we will be using menifest file from the GitHub repositiry.
 
 https://github.com/kubernetes-sigs/external-dns
 
 
-Before deploying the yaml, change the namespace name in ClusterRoleBinding in external-dns.yaml file
+10. Before deploying the yaml, change the namespace name in ClusterRoleBinding in external-dns.yaml file
 ``` bash
 kubectl create ns external-dns
 
@@ -140,26 +137,23 @@ verify the deployment
 ``` bash
 kubectl get pods,sa -n external-dns
 ```
-7. Using the external DNS with kubernetes service
+11. Using the external DNS with kubernetes service
 ``` bash
 kubectl apply -f app_lb.yaml 
 kubectl get pods,svc
 ```
-Check the logs in  external DNS pod
+12. Check the logs in  external DNS pod
 ``` bash
 kubectl logs <external-dns-pod name> -n external-dns
 ```
 In portal go to DNS zone to check Updated A record in corresponding zones
 
-Create a sample app exposed through ingress
+13. Create a sample app exposed through ingress
 ``` bash
 kubectl apply -f app_ingress.yaml
 
 kubectl get pods,svc,ingress
 ```
-Reference:
-    https://github.com/HoussemDellai/docker-kubernetes-course/tree/main
-
 
 Future work:
     1. Check for other authentication method.
