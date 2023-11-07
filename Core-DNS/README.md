@@ -42,15 +42,17 @@ Now, create and deploy the custom domain name for resolution inside Kubernetes:
 
 ``` bash
 kubectl apply -f custom_coredns.yaml
-Note: You might encounter a warning about missing annotations, but it can be ignored in this context.
 ```
+Note: You might encounter a warning about missing annotations, but it can be ignored in this context.
+
 Once the coredns-custom ConfigMap is deployed, delete the CoreDNS pods using the following command:
 
 ```bash
 kubectl delete pod -n kube-system -l k8s-app=kube-dns
 ```
 After the new CoreDNS pods are created, you can test the custom domain by using curl to access the Nginx service with the custom domain name:
-'''bash
+
+``` bash
 
 kubectl exec -it <nginx-pod-name> -- curl http://nginx.default.aks.com
 ```
