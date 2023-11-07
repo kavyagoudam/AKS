@@ -9,7 +9,7 @@ The main objective is to set up a custom domain in Kubernetes clusters, replacin
 ## Service Discovery with CoreDNS
 
 CoreDNS integrates with Kubernetes via the Kubernetes plugin or with etcd using the etcd plugin. CoreDNS is already installed in Kubernetes by default. You can verify its status using the following command:
-
+```bash
 kubectl get pods,svc,configmaps -n kube-system -l=k8s-app=kube-dns
 The output will display CoreDNS pods and services:
 
