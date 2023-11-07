@@ -59,20 +59,19 @@ Authentication between External Pods and Azure DNS
 
 External DNS pods authenticate to Azure DNS using one of the three methods.
 1. Service principle
-   ``` bash
-    $EXTERNALDNS_SPN_NAME="spn-external-dns-aks"
-
-    # Create the service principal
-    az ad sp create-for-rbac --name $EXTERNALDNS_SPN_NAME
-    {   
-        "appId": "XXXXXXXXXXXXXXXXXXXXXXXXXXX",
-        "displayName": "spn-external-dns-aks",
-        "password": "********************",
-        "tenant": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    }
-    $EXTERNALDNS_SPN_APP_ID= "<appId of spn |refer output of above command>"
-    $EXTERNALDNS_SPN_PASSWORD="<password of spn | refer output of above command>"
+``` bash
+$EXTERNALDNS_SPN_NAME="spn-external-dns-aks"
+az ad sp create-for-rbac --name $EXTERNALDNS_SPN_NAME
+{   
+    "appId": "XXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "displayName": "spn-external-dns-aks",
+    "password": "********************",
+    "tenant": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+}
+$EXTERNALDNS_SPN_APP_ID= "<appId of spn |refer output of above command>"
+$EXTERNALDNS_SPN_PASSWORD="<password of spn | refer output of above command>"
 ```
+
 3. kubelet Managed Identity
 4. User Assigned MAnaged Identity
 
@@ -80,20 +79,25 @@ Assign the RBAC for the service principal :
 
 Grant access to Azure DNS zone for the service principal.
 
-# fetch DNS id and RG used to grant access to the service principal
+fetch DNS id and RG used to grant access to the service principal
+
 ``` bash
 $DNS_ZONE_ID=$(az network dns zone show -n $DNS_ZONE_NAME -g $DNS_ZONE_RG --query "id" -o tsv)
 $DNS_ZONE_RG_ID=$(az group show -g $DNS_ZONE_RG --query "id" -o tsv)
 ```
-# assign reader to the resource group
+assign reader to the resource group
+
 ``` bash
 az role assignment create --role "Reader" --assignee $EXTERNALDNS_SPN_APP_ID --scope $DNS_ZONE_RG_ID
 ```
-# assign contributor to DNS Zone itself
+
+assign contributor to DNS Zone itself
 ``` bash
 az role assignment create --role "DNS Zone Contributor" --assignee $EXTERNALDNS_SPN_APP_ID --scope $DNS_ZONE_ID
 ```
+
 verify the role Assignment
+
 ``` bash
 az role assignment list --all --assignee $EXTERNALDNS_SPN_APP_ID -o table
 ```
@@ -112,12 +116,12 @@ Create a Kubernetes secret for the service principal
 ```
 
 Deploy the credentials as a Kubernetes secret.
+
 ``` bash
 kubectl create namespace external-dns
-namespace/external-dns created
+
 
 kubectl create secret generic azure-config-file -n external-dns --from-file azure.json
-secret/azure-config-file created
 ```
 6. Deploy External DNS
 
@@ -138,8 +142,8 @@ kubectl get pods,sa -n external-dns
 ```
 7. Using the external DNS with kubernetes service
 ``` bash
-    kubectl apply -f app-lb.yaml 
-    kubectl get pods,svc
+kubectl apply -f app_lb.yaml 
+kubectl get pods,svc
 ```
 Check the logs in  external DNS pod
 ``` bash
@@ -155,6 +159,7 @@ kubectl get pods,svc,ingress
 ```
 Reference:
     https://github.com/HoussemDellai/docker-kubernetes-course/tree/main
+
 
 Future work:
     1. Check for other authentication method.
