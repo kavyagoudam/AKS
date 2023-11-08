@@ -1,0 +1,164 @@
+1. SNAT port exhaustion issue with Load Balancer
+
+A Load Balancer is a simple and easy solution as outbound type. But it doesn't scale well in terms of SNAT port numbers. When there are so many pods trying to connect to external services, they will use source network address translation (SNAT) to translate virtual machine's private IP into the load balancer's public IP address. That is a known issue with LB. Here is why.
+
+With LB, each VM use a fixed number (up to 1024) pre-allocated SNAT ports. If a VM need more, it will run into port exhaustion and connection will be dropped. Meanwhile, other VMs might have available SNAT ports! With NAT Gateway, pre-allocation of SNAT ports isn't required, which means SNAT ports aren't left unused by VMs not actively needing them.
+
+There are two solutions for this issue.
+
+Solution 1: Adding public IP addresses for egress traffic
+We can scale the number of managed outbound public IPs. Each IP address provides 64k ephemeral ports to use as SNAT ports.
+```bash
+az aks update -g rg-aks-lb -n aks-lb --load-balancer-managed-outbound-ip-count 3
+```
+
+
+Solution 2 : Replacing the Load Balancer with NAT Gateway.
+The NAT Gateway service was created to resolve this exact issue. Let's explore how it works in the next section.
+
+2. AKS cluster with outbound type managed NAT Gateway
+Virtual Network NAT is a fully managed and highly resilient Network Address Translation (NAT) service. It simplifies outbound Internet connectivity for virtual networks.
+It acts “like” a Load Balancer for outbound traffic. And it reduces the risk of SNAT port exhaustion.
+
+Let's create an AKS cluster that uses managed NAT Gateway.
+```bash
+
+az group create -n rg-aks-natgateway -l westeurope
+
+az aks create -g rg-aks-natgateway -n aks-natgateway `
+    --outbound-type managedNATGateway `
+    --nat-gateway-managed-outbound-ip-count 2 `
+    --nat-gateway-idle-timeout 4
+
+az aks get-credentials -g rg-aks-natgateway -n aks-natgateway
+
+```
+NAT Gateway and Public IPs are created. There are no Load Balancer.
+
+
+
+Note the egress traffic uses the two public IPs of the NAT Gateway.
+
+```bash
+
+kubectl run nginx --image=nginx
+kubectl exec nginx -it -- curl http://ifconfig.me
+# 108.143.4.185
+kubectl exec nginx -it -- curl http://ifconfig.me
+# 108.143.4.205
+
+```
+
+NAT Gateway could have 1 to 16 public IPs or a public IP Prefix.
+
+Each IP address provides 64k SNAT ports ephemeral ports to use as SNAT ports.
+
+64k SNAT ports * 16 IPs = 1,024,000 (~1 million) max SNAT ports.
+
+
+We saw that there is no Load Balancer created during cluster creation.
+
+So how to handle ingress traffic ?
+
+If we create a service of type LoadBalancer, AKS will create a new Load Balancer and public IP.
+
+```sh
+
+kubectl create deployment nginx --image nginx                                  
+# deployment.apps/nginx created
+kubectl expose deployment nginx --name nginx --port=80 --type LoadBalancer     
+# service/nginx exposed
+kubectl get svc
+# NAME         TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE
+# kubernetes   ClusterIP      10.0.0.1     <none>        443/TCP        4m53s
+# nginx        LoadBalancer   10.0.80.95   51.124.78.34  80:31672/TCP   9s
+
+```
+
+3. AKS cluster with outbound type user assigned NAT Gateway
+
+This option is the same as managed NAT Gateway explained earlier. The only difference is that you bring your own (BYO) NAT GAteway. You create it and configure it yourself instead of letting AKS to create it for you.
+
+Here is a sample script to create a NAT Gateway and configure it with AKS.
+
+```bash
+
+az group create -n rg-aks-usernatgateway -l westeurope
+
+# Create a managed identity for network permissions and store the ID to $IDENTITY_ID for later use.
+
+$IDENTITY_ID=$(az identity create `
+--resource-group rg-aks-usernatgateway `
+--name natClusterId `
+--location westeurope `
+--query id `
+--output tsv)
+
+# Create a public IP for the NAT gateway.
+az network public-ip create `
+    --resource-group rg-aks-usernatgateway `
+    --name myNatGatewayPip `
+    --location westeurope `
+    --sku standard
+
+# Create the NAT gateway.
+
+az network nat gateway create `
+    --resource-group rg-aks-usernatgateway `
+    --name myNatGateway `
+    --location westeurope `
+    --public-ip-addresses myNatGatewayPip
+
+# Create a virtual network.
+
+az network vnet create `
+    --resource-group rg-aks-usernatgateway `
+    --name myVnet `
+    --location westeurope `
+    --address-prefixes 172.16.0.0/20 
+
+# Create a subnet in the virtual network using the NAT gateway and store the ID to $SUBNET_ID for later use.
+
+$SUBNET_ID=$(az network vnet subnet create `
+    --resource-group rg-aks-usernatgateway `
+    --vnet-name myVnet `
+    --name natCluster `
+    --address-prefixes 172.16.0.0/22 `
+    --nat-gateway myNatGateway `
+    --query id `
+    --output tsv)
+
+# Create an AKS cluster using the subnet with the NAT gateway and the managed identity.
+
+az aks create `
+    --resource-group rg-aks-usernatgateway `
+    --name natCluster `
+    --location westeurope `
+    --network-plugin azure `
+    --vnet-subnet-id $SUBNET_ID `
+    --outbound-type userAssignedNATGateway `
+    --enable-managed-identity `
+    --assign-identity $IDENTITY_ID
+
+az aks get-credentials -g rg-aks-usernatgateway -n natCluster
+
+
+```
+
+Note the egress traffic uses public IP address of the NAT Gateway.
+
+```bash
+
+kubectl run nginx --image=nginx
+kubectl exec nginx -it -- curl http://ifconfig.me
+20.160.2.17
+
+```
+
+Limitations with NAT Gateway
+
+1. NAT Gateway supports one availability zone (AZ)
+2. AKS is typically deployed within 2 or 3 zones to ensure the resiliency
+3. To support 3 AZ , we needto deploy a NAT Gateway in each AZ
+4. this means a Nodepool with its subnet in each AZ
+
