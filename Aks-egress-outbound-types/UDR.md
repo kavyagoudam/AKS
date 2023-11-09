@@ -113,3 +113,86 @@ az aks create -g $RG -n $AKSNAME -l $LOC `
   --api-server-authorized-ip-ranges $FWPUBLIC_IP
 
 ```
+
+Check the created resources. Note there are no Load Balancer created. That is because with UDR mode, egress traffic will be managed by Route Table and Firewall. So there is no need for a Load Balancer for egress. However, if you create a public Kubernetes service or ingress controller, AKS will create the Load Balancer to handle the ingress traffic. In this case, the egress traffic will still be handled by Firewall.
+
+Azure Firewall will deny all traffic by default. However, AKS, during the creation, needs to connect to external resources like MCR, Ubuntu updates server, etc. This is in order to pull system container images and get nodes updates. For that reason, we opened traffic into these resources and more using the Service Tag or also named FQDN Tag called AzureKubernetesService.
+
+Verify the egress traffic is using the Firewall public IP.
+
+```bash
+
+kubectl run nginx --image=nginx
+# pod/nginx created
+
+kubectl exec nginx -it -- /bin/bash
+# error: unable to upgrade connection: container not found ("nginx")
+
+kubectl get pods
+# NAME    READY   STATUS         RESTARTS   AGE
+# nginx   0/1     ErrImagePull   0          32s
+
+```
+The above error is because Azure Firewall blocks access to non allowed endpoints. Let's create an application rule to allow access to Docker Hub to pull the nginx container image.
+```bash
+
+az network firewall application-rule create -g $RG -f $FWNAME --collection-name 'dockerhub-registry' -n 'dockerhub-registry' --action allow --priority 200 --source-addresses '*' --protocols 'https=443' --target-fqdns hub.docker.com registry-1.docker.io production.cloudflare.docker.com auth.docker.io cdn.auth0.com login.docker.com
+# Creating rule collection 'dockerhub-registry'.
+# {
+#   "actions": [],
+#   "description": null,
+#   "direction": "Inbound",
+#   "fqdnTags": [],
+#   "name": "dockerhub-registry",
+#   "priority": 0,
+#   "protocols": [
+#     {
+#       "port": 443,
+#       "protocolType": "Https"
+#     }
+#   ],
+#   "sourceAddresses": [
+#     "*"
+#   ],
+#   "sourceIpGroups": [],
+#   "targetFqdns": [
+#     "hub.docker.com",
+#     "registry-1.docker.io",
+#     "production.cloudflare.docker.com",
+#     "auth.docker.io",
+#     "cdn.auth0.com",
+#     "login.docker.com"
+#   ]
+# }
+
+```
+
+Let's retry now. The image should be pulled and pod works just fine.
+```bash
+kubectl get pods
+# NAME    READY   STATUS    RESTARTS   AGE
+# nginx   1/1     Running   0          21m
+```
+Let's see what IP address is used by the pod to access external services. We use ifconfig.me to view the IP address on the remote server.
+
+```bash
+kubectl exec nginx -it -- curl http://ifconfig.me
+# Action: Deny. Reason: No rule matched. Proceeding with default action.
+
+```
+
+Again, access is blocked by the Firewall. Create an application rule to allow access to ifconfig.me.
+```bash
+
+az network firewall application-rule create -g $RG -f $FWNAME --collection-name 'ifconfig' -n 'ifconfig' --action allow --priority 300 --source-addresses '*' --protocols 'http=80' --target-fqdns ifconfig.me
+
+```
+
+Let's retry again now. We should see the Pod outbound traffic uses the Firewall public IP address.
+
+```bash
+
+kubectl exec nginx -it -- curl http://ifconfig.me
+# 20.229.246.163
+
+```
