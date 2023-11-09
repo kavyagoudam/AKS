@@ -10,7 +10,7 @@ In this article we will be focusing on Azure Disk
 
 Azure Disk in LRS mode
 
-![](images/LRS_Disk.png)
+![](images/LRS_Disk.drawio)
 
 Azure disk by default in RWO mode, it means only one mode can be mounted at a time. All pods inside a node can be mounted to disk, but only one pod can write at a time
 
