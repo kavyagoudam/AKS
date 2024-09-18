@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  test.server: |
+    aks.com:53 {
+    log
+    errors
+    rewrite stop {
+      name regex (.*)\.aks.com {1}.default.svc.cluster.local
+      answer name (.*)\.default\.svc\.cluster\.local {1}.aks.com
+    }
+    forward . /etc/resolv.conf # you can redirect this to a specific DNS server such as 10.0.0.10, but that server must be able to resolve the rewritten domain name
+    }

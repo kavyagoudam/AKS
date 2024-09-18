@@ -6,6 +6,6 @@ metadata:
 data:
   internal-custom.override: | # any name with .server extension
     rewrite stop {
-      name regex (.*)\.aks\.com\.$ {1}.svc.cluster.local.
-      answer name (.*)\.svc\.cluster\.local\.$ {1}.aks.com.
+      name regex (.*)\.aks\.com\.$ {1}.default.svc.cluster.local.
+      answer name (.*).\default\.svc\.cluster\.local\.$ {1}.aks.com.
     }
